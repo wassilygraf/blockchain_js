@@ -68,13 +68,23 @@ BlockChain.prototype.chainIsValid = function (blockchain) {
     if(index) {
       const previousBlock = chain[index - 1];
       const hashesMatch = block.previousBlockHash === previousBlock.hash;
-      const blockHash = this.hashBlock(chain)
-      return hashesMatch;
+      const blockHash = this.hashBlock(previousBlock['hash'], {
+        transactions: block['transactions'],
+        index: block['index'],
+      }, block['nonce']);
+      const validHash = blockHash.substring(0,4) === '0000';
+      return hashesMatch && validHash;
     }
     // return true by default for the first item in the chain
     return true;
-  })
-  return validChain;
+  });
+
+  const genesisBlock = blockchain[0];
+  const validGenesis = genesisBlock.nonce === 100 
+    && genesisBlock.previousBlockHash === '0' 
+    && genesisBlock.hash === '0' 
+    && !genesisBlock.transactions.length;
+  return validChain && validGenesis;
 }
 
 module.exports = BlockChain;
