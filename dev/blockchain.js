@@ -112,7 +112,7 @@ BlockChain.prototype.getTransaction = function (transactionId) {
 BlockChain.prototype.getAddressData = function (address) {
   const allTransactions = this.chain.reduce((acc, block) => {
     const transactions = block.transactions
-      .filter(tx => tx.address === address || tx.recipient ===address);
+      .filter(tx => tx.sender === address || tx.recipient === address);
 
     if (transactions) {
       acc.push(...transactions);
@@ -120,12 +120,13 @@ BlockChain.prototype.getAddressData = function (address) {
     return acc;
   }, [])
 
+  console.log(allTransactions);
   // get balance
   const balance = allTransactions.reduce((acc, tx) => {
     if(tx.recipient === address) {
       acc += tx.amount;
     } else {
-      acc -+ tx.amount;
+      acc -= tx.amount;
     }
     return acc;
   }, 0);
