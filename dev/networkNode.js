@@ -49,7 +49,7 @@ app.get('/mine', async (req, res) => {
   const lastBlock = bitcoin.getLastBlock();
   const previousBlockHash = lastBlock.hash
   const currentBlockData = {
-    transactions: bitcoin.transactions,
+    transactions: bitcoin.pendingTransactions,
     index: lastBlock.index + 1,
   }
   const nonce = bitcoin.proofOfWork(previousBlockHash, currentBlockData);
@@ -158,6 +158,37 @@ app.post('/register-nodes-bulk', (req, res) => {
     };
   });
   res.json({ note: 'bulk registration successful' });
+})
+
+// get consensus
+app.get('/consensus', async (req, res) => {
+
+  // get all request promises for each network node 
+  const reqPromises = bitcoin.networkNodes.map(nodeUrl => rp({
+    uri: `${nodeUrl}/blockchain`,
+    method: 'GET',
+    json: true,
+  }))
+  // execute requests and get all blockchains
+  const blockchains = await Promise.all(reqPromises);
+
+  const initialNodeChainLength = bitcoin.chain.length;
+  blockchains.forEach(blockchain => {
+    if (blockchain.chain.length > bitcoin.chain.length && bitcoin.chainIsValid(blockchain.chain)) {
+      bitcoin.chain = blockchain.chain;
+      bitcoin.pendingTransactions = blockchain.pendingTransactions;
+    }
+  });
+
+  let note = initialNodeChainLength < bitcoin.chain.length 
+    ? 'this chain has been replaced'
+    : 'current chain has not been replaced';
+
+  res.json({
+    note, 
+    chain: bitcoin.chain,
+  }); 
+
 })
 
 app.listen(PORT, () => console.log(`listening on port ${PORT}...`));

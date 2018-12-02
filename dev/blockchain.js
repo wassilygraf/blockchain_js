@@ -54,24 +54,28 @@ BlockChain.prototype.hashBlock = function (previousBlockHash, currentBlockData, 
 }
 
 BlockChain.prototype.proofOfWork = function (previousBlockHash, currentBlockData) {
+  console.log(previousBlockHash, currentBlockData);
   let nonce = 0;
   let hash = this.hashBlock(previousBlockHash, currentBlockData, nonce);
   while(hash.substring(0, 4) !== '0000') {
     nonce += 1;
     hash = this.hashBlock(previousBlockHash, currentBlockData, nonce);
   }
+  console.log(nonce);
   return nonce;
 }
 
 BlockChain.prototype.chainIsValid = function (blockchain) {
-  const validChain = blockchain.every((block, index, chain) => {
-    if(index) {
-      const previousBlock = chain[index - 1];
+  const validChain = blockchain.every((block, chainIndex, chain) => {
+    if(chainIndex) {
+      const previousBlock = chain[chainIndex - 1];
       const hashesMatch = block.previousBlockHash === previousBlock.hash;
-      const blockHash = this.hashBlock(previousBlock['hash'], {
-        transactions: block['transactions'],
-        index: block['index'],
-      }, block['nonce']);
+
+      const blockHash = this.hashBlock(previousBlock.hash, {
+        transactions: block.transactions,
+        index: block.index,
+      }, block.nonce);
+
       const validHash = blockHash.substring(0,4) === '0000';
       return hashesMatch && validHash;
     }
@@ -84,6 +88,7 @@ BlockChain.prototype.chainIsValid = function (blockchain) {
     && genesisBlock.previousBlockHash === '0' 
     && genesisBlock.hash === '0' 
     && !genesisBlock.transactions.length;
+
   return validChain && validGenesis;
 }
 
