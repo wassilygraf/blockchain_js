@@ -54,14 +54,12 @@ BlockChain.prototype.hashBlock = function (previousBlockHash, currentBlockData, 
 }
 
 BlockChain.prototype.proofOfWork = function (previousBlockHash, currentBlockData) {
-  console.log(previousBlockHash, currentBlockData);
   let nonce = 0;
   let hash = this.hashBlock(previousBlockHash, currentBlockData, nonce);
   while(hash.substring(0, 4) !== '0000') {
     nonce += 1;
     hash = this.hashBlock(previousBlockHash, currentBlockData, nonce);
   }
-  console.log(nonce);
   return nonce;
 }
 
@@ -90,6 +88,52 @@ BlockChain.prototype.chainIsValid = function (blockchain) {
     && !genesisBlock.transactions.length;
 
   return validChain && validGenesis;
+}
+
+BlockChain.prototype.getBlock = function (blockHash) {
+  return this.chain.find(block => block.hash === blockHash);
+}
+
+BlockChain.prototype.getTransaction = function (transactionId) {
+  // get the block that has a transaction with the correct transactionId
+  return this.chain.reduce((acc, block) => {
+    const transaction = block.transactions.find(
+      transaction => transaction.transactionId === transactionId);
+
+    if (transaction) {
+      acc.transaction = transaction;
+      acc.block = block;
+    }
+
+    return acc;
+  }, {})
+}
+
+BlockChain.prototype.getAddressData = function (address) {
+  const allTransactions = this.chain.reduce((acc, block) => {
+    const transactions = block.transactions
+      .filter(tx => tx.address === address || tx.recipient ===address);
+
+    if (transactions) {
+      acc.push(...transactions);
+    }
+    return acc;
+  }, [])
+
+  // get balance
+  const balance = allTransactions.reduce((acc, tx) => {
+    if(tx.recipient === address) {
+      acc += tx.amount;
+    } else {
+      acc -+ tx.amount;
+    }
+    return acc;
+  }, 0);
+
+  return {
+    allTransactions,
+    balance,
+  }
 }
 
 module.exports = BlockChain;

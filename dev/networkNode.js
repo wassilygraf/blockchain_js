@@ -87,12 +87,10 @@ app.get('/mine', async (req, res) => {
 
 app.post('/receive-new-block', (req, res) => {
   const { newBlock } = req.body;
-  console.log(newBlock);
   const lastBlock = bitcoin.getLastBlock();
 
   const correctHash = lastBlock.hash === newBlock.previousBlockHash;
   const correctIndex = lastBlock.index + 1 === newBlock.index;
-  console.log(correctHash, correctIndex);
 
   if(correctHash && correctIndex) {
     bitcoin.chain.push(newBlock);
@@ -188,7 +186,30 @@ app.get('/consensus', async (req, res) => {
     note, 
     chain: bitcoin.chain,
   }); 
+})
 
+// get specific block
+app.get('/block/:blockHash', (req, res) => {
+  const { blockHash } = req.params;
+  const block = bitcoin.getBlock(blockHash);
+  res.json({ block });
+})
+
+// get specific transaction
+app.get('/transaction/:transactionId', (req, res) => {
+  const { transactionId } = req.params;
+  const { transaction, block } = bitcoin.getTransaction(transactionId);
+  res.json({ transaction, block });
+})
+
+// get specific address
+app.get('/address/:address', (req, res) => {
+  const { address } = req.params;
+  const { 
+    allTransactions: transactions, 
+    balance,
+  } = bitcoin.getAddressData(address);
+  res.json({ transactions, balance });
 })
 
 app.listen(PORT, () => console.log(`listening on port ${PORT}...`));
